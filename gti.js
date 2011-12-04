@@ -23,7 +23,7 @@ var m = sp.require('sp://import/scripts/api/models'),
 // Default options
 var gameTime = 5 * (60 * 1000), // in milliseconds
 	roundTime = 20000, // in milliseconds
-	maxRoundScore = 300, // maximum score to be had in a round
+	maxRoundScore = 30, // maximum score to be had in a round
 	initialMultiplier = 1,
 	maxMultiplier = 8;
 
@@ -34,6 +34,7 @@ var pool = [],
 	currentRound,
 	score = 0,
 	multiplier = initialMultiplier,
+	// multiplierEl = $('multiplier'),
 	roundTimer;
 
 /**
@@ -50,7 +51,6 @@ function init()
 	}
 
 	document.getElement('#startscreen .newgame').addEvent('click', gameStart);
-
 }
 
 /**
@@ -72,6 +72,12 @@ function gameStart()
 			pool.push(track);
 		}
 		showMainUI();
+	});
+
+	window.addEvent('unload', function() {
+		if (currentRound) {
+			currentRound.end(false);
+		}
 	});
 
 	// Attach an event to check for keypresses
@@ -101,11 +107,9 @@ function gameStart()
 function showMainUI()
 {
 	var header = document.getElement('header');
-	header.addEventListener('webkitTransitionEnd', function() {
-		setTimeout(function() {
-			newRound();
-		}, 500);
-	});
+	setTimeout(function() {
+		newRound();
+	}, 500);
 	document.getElement('header').removeClass('hidden');
 }
 
@@ -136,6 +140,23 @@ function updateTimer(timeRemaining)
 
 	var d = 'M50,50 L50,10 A40,40 0 '+d+',1 '+x+','+y+' z';
 	roundTimer.set('d', d);
+
+	var minutes = Math.floor((gameTimeRemaining / 1000) / 60);
+	var seconds = Math.floor((gameTimeRemaining / 1000) - (minutes * 60));
+	$('timer').getElement('.time').set('text', minutes+':'+(seconds < 10 ? '0' : '')+seconds);
+}
+
+/**
+ *
+ */
+function updateMultiplier()
+{
+	console.log('updating multiplier', multiplier);
+	$('multiplier').getElement('.count').set('text', multiplier);
+
+	if (multiplier > 1) {
+		console.log($('multiplier').removeClass('hidden'));
+	}
 }
 
 
@@ -149,6 +170,7 @@ function Round()
 	this.choiceEls = [];
 	this.disabledChoices = [];
 	this.timeRemaining = roundTime;
+	this.roundScore = 0;
 
 	this.getChoices();
 	this.displayChoices();
@@ -160,9 +182,14 @@ function Round()
  */
 Round.prototype.getChoices = function()
 {
+	var attempts = 0;
 	// Get 4 choices from the pool and save them in this round
-	for (var i = 0; i < 4; i++) {
-		this.choices.push(pool[Math.floor(Math.random() * pool.length)]);
+	while(this.choices.length < 4 && attempts < 50) {
+		var track = pool[Math.floor(Math.random() * pool.length)];
+		if (this.choices.indexOf(track) === -1 && track.data.availableForPlayback) {
+			this.choices.push(track);
+		}
+		attempts++;
 	}
 
 	// Grab a random item from the choices, which is the correct choice
@@ -179,15 +206,24 @@ Round.prototype.getChoices = function()
 Round.prototype.displayChoices = function()
 {
 	this.wrapper = new Element('ul.choices.round-'+currentRound);
+	this.wrapper.addEvent('click', function(e) {
+		var li = e.target;
+		if (li.get('tag') !== 'li') {
+			li = e.target.getParent('li');
+		}
+		this.choose(li.retrieve('number'));
+	}.bind(this));
 
 	var self = this;
 	for (var i = 0; i < this.choices.length; i++) {
 		var track = this.choices[i];
 		var el = new Element('li');
+		el.store('number', i + 1);
 		el.adopt(
 			new v.Image(track.data.album.cover).node,
 			new Element('div.track', {html: track.data.name}),
-			new Element('div.artist', {html: track.data.artists[0].name})
+			new Element('div.artist', {html: track.data.artists[0].name}),
+			new Element('div.number', {html: i + 1})
 		);
 
 		// Save the element
@@ -221,11 +257,14 @@ Round.prototype.timer = function()
 {
 	this.timerInterval = setInterval(function() {
 		this.timeRemaining -= 100;
+		gameTimeRemaining -= 100;
 		updateTimer(this.timeRemaining);
 		this.lastTimer = new Date();
 		if (this.timeRemaining <= 0) {
+			multiplier = 1;
+			updateMultiplier();
 			updateTimer(1);
-			this.end();
+			this.end(true);
 		}
 	}.bind(this), 100);
 };
@@ -239,20 +278,29 @@ Round.prototype.choose = function(number)
 	// Check if it's the correct choice
 	if (index === this.correctChoice) {
 		console.log('GREAT SUCCESS!');
+		if (this.timeRemaining > 0) {
+			this.timeRemaining -= new Date() - this.lastTimer;
+			gameTimeRemaining -= new Date() - this.lastTimer;
+			this.roundScore = Math.ceil((maxRoundScore / roundTime) * this.timeRemaining * multiplier);
+			score += this.roundScore;
+			document.getElement('#score .count').set('text', score);
+		}
 		multiplier++;
-		console.log(multiplier);
-		this.end();
+		updateMultiplier();
+		this.end(true);
 	}
 
 	// Wrong choice
 	else if (this.disabledChoices.indexOf(index) === -1) {
 		this.choiceEls[index].classList.add('inactive');
 		this.disabledChoices.push(index);
+		multiplier = 1;
+		updateMultiplier();
 
 		this.timeRemaining -= (roundTime / 3);
 		if (this.timeRemaining <= 0) {
 			updateTimer(1);
-			this.end();
+			this.end(true);
 		} else {
 			updateTimer(this.timeRemaining);
 		}
@@ -262,19 +310,15 @@ Round.prototype.choose = function(number)
 /**
  *
  */
-Round.prototype.end = function()
+Round.prototype.end = function(startNewRound)
 {
 	clearInterval(this.timerInterval);
 	m.player.playing = false;
 
-	if (this.timeRemaining > 0) {
-		this.timeRemaining -= new Date() - this.lastTimer;
-		this.roundScore = Math.ceil((maxRoundScore / roundTime) * this.timeRemaining);
-		score += this.roundScore;
-	}
-
 	this.wrapper.dispose();
-	setTimeout(function() {
-		newRound();
-	}, 2000);
+	if (startNewRound) {
+		setTimeout(function() {
+			newRound();
+		}, 2000);
+	}
 };

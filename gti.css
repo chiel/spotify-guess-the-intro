@@ -23,7 +23,7 @@ body {
 .ribbon:hover {
 	text-decoration: none;
 }
-	.ribbon span {
+	.ribbon .foreground {
 		display: block;
 		height: 100%;
 		padding: 0 50px;
@@ -39,11 +39,11 @@ body {
 		-webkit-mask-box-image: url('img/ribbon-mask-fg.png') 0 41 0 40 stretch;
 	}
 
-	.newgame.ribbon span {
+	.newgame.ribbon .foreground {
 		background: #0a7dbf;
 	}
-	.newgame.ribbon:hover span {
-		background: #f00;
+	.newgame.ribbon:hover .foreground {
+		background: #0f8ad0;
 	}
 
 #startscreen {
@@ -83,6 +83,18 @@ header.hidden {
 	top: -100px;
 }
 
+#timer {
+	position: absolute;
+	top: 28px;
+	left: 0;
+	width: 175px;
+	text-align: right;
+}
+	#timer .time {
+		color: #212121;
+		font-size: 36px;
+	}
+
 #roundtimer {
 	position: absolute;
 	top: 50%;
@@ -100,8 +112,39 @@ header.hidden {
 		margin: -50px 0 0 -50px;
 	}
 
+#score {
+	position: absolute;
+	top: 28px;
+	right: 0;
+	width: 175px;
+	color: rgba(33, 33, 33, .5);
+	font-size: 16px;
+	text-transform: uppercase;
+}
+	#score .count {
+		color: #212121;
+		font-size: 36px;
+	}
 
-#timer, #points {
+#multiplier {
+	position: absolute;
+	top: 51px;
+	left: 50%;
+	display: block;
+	width: 250px;
+	margin: 0 0 0 -125px;
+	-webkit-transform: scale(.6);
+	-webkit-transition: opacity .2s;
+}
+#multiplier.hidden {
+	opacity: 0;
+}
+	#multiplier .count {
+		display: inline;
+		width: auto;
+	}
+
+#timer, #score {
 	font-family: 'League Gothic';
 }
 
@@ -123,24 +166,51 @@ header.hidden {
 	.choices li {
 		width: 190px;
 		margin-left: 20px;
+		font-weight: bold;
+		text-align: center;
+		white-space: nowrap;
 		-webkit-transition: opacity .4s;
 	}
 	.choices li:first-child {
 		margin-left: 0;
 	}
-	.choices li.inactive {
-		opacity: .6;
-	}
 	.choices .sp-image {
 		width: 190px;
 		height: 190px;
+		margin: 0 0 24px;
+		background-position: center;
 		background-size: cover;
 	}
-	.choices .artwork {
-		width: 190px;
-		height: 190px;
+	.choices .track {
+		overflow: hidden;
+		color: #000;
+		font-size: 13px;
+		text-overflow: ellipsis;
 	}
-
+	.choices .artist {
+		color: #6d6d6d;
+	}
+	.choices .number {
+		width: 38px;
+		height: 38px;
+		margin: 24px auto 0;
+		border-radius: 23px;
+		box-shadow: 0 0 0 5px rgba(255, 91, 38, .35);
+		background: #ff5b26;
+		color: #fff;
+		font-family: 'League Gothic';
+		font-size: 26px;
+		font-smoothing: antialiased;
+		line-height: 39px;
+		text-shadow: none;
+		-webkit-transition: opacity .4s;
+	}
+	.choices li.inactive {
+		opacity: .6;
+	}
+		.choices li.inactive .number {
+			opacity: 0;
+		}
 
 @-webkit-keyframes spin {
 	from { -webkit-transform: rotate(0deg); }

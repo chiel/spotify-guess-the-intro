@@ -12,12 +12,13 @@
 <body>
 	<div id="startscreen">
 		<h1>Guess the Intro</h1>
-		<a class="ribbon newgame"><span>New Game</span></a>
+		<a class="ribbon newgame"><span class="foreground">New Game</span></a>
 	</div>
 
 	<header class="hidden">
 		<div class="margin">
 			<div id="timer">
+				<span class="time"></span>
 			</div>
 			<div id="roundtimer">
 				<svg width="100" height="100">
@@ -25,7 +26,8 @@
 					<path d="M50,50 L50,10 A40,40 0 0,1 50,10 z" style="fill:#ffffff; fill-opacity: 1">
 				</svg>
 			</div>
-			<div id="points"></div>
+			<div id="multiplier" class="ribbon hidden"><span class="foreground"><span class="count">1</span>x multiplier</span></div>
+			<div id="score"><span class="count">0</span> points</div>
 		</div>
 	</header>
 	<section id="body">
