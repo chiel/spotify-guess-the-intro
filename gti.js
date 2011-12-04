@@ -33,7 +33,8 @@ var pool = [],
 	pastRounds = [],
 	currentRound,
 	score = 0,
-	multiplier = initialMultiplier;
+	multiplier = initialMultiplier,
+	roundTimer;
 
 /**
  * Grab the user's library and start the game!
@@ -59,6 +60,9 @@ function gameStart()
 {
 	$('startscreen').addClass('hidden');
 
+	// Pie timer
+	roundTimer = $('roundtimer').getElement('svg path');
+
 	// Get all tracks in a user's library
 	pool = m.library.tracks;
 
@@ -67,9 +71,7 @@ function gameStart()
 		if (pool.indexOf(track) !== -1) {
 			pool.push(track);
 		}
-		build();
 		showMainUI();
-		// newRound();
 	});
 
 	// Attach an event to check for keypresses
@@ -98,7 +100,12 @@ function gameStart()
  */
 function showMainUI()
 {
-	console.log('show main ui');
+	var header = document.getElement('header');
+	header.addEventListener('webkitTransitionEnd', function() {
+		setTimeout(function() {
+			newRound();
+		}, 500);
+	});
 	document.getElement('header').removeClass('hidden');
 }
 
@@ -114,11 +121,21 @@ function newRound()
 }
 
 /**
- * Build up the generic UI elements
+ *
  */
-function build()
+function updateTimer(timeRemaining)
 {
-	//
+	var ps = ((roundTime - timeRemaining) / roundTime) - 0.25,
+		r = 40, d = 0,
+		x = r * Math.cos(Math.PI * 2 * ps) + 50,
+		y = r * Math.sin(Math.PI * 2 * ps) + 50;
+
+	if (x < 50) {
+		d = 1;
+	}
+
+	var d = 'M50,50 L50,10 A40,40 0 '+d+',1 '+x+','+y+' z';
+	roundTimer.set('d', d);
 }
 
 
@@ -178,7 +195,7 @@ Round.prototype.displayChoices = function()
 		this.wrapper.adopt(el);
 	};
 
-	this.wrapper.inject($('body'));
+	this.wrapper.inject(document.getElement('#body .margin'));
 };
 
 /**
@@ -203,12 +220,14 @@ Round.prototype.startTimer = function()
 Round.prototype.timer = function()
 {
 	this.timerInterval = setInterval(function() {
-		this.timeRemaining -= 1000;
+		this.timeRemaining -= 100;
+		updateTimer(this.timeRemaining);
 		this.lastTimer = new Date();
 		if (this.timeRemaining <= 0) {
+			updateTimer(1);
 			this.end();
 		}
-	}.bind(this), 1000);
+	}.bind(this), 100);
 };
 
 /**
@@ -220,6 +239,8 @@ Round.prototype.choose = function(number)
 	// Check if it's the correct choice
 	if (index === this.correctChoice) {
 		console.log('GREAT SUCCESS!');
+		multiplier++;
+		console.log(multiplier);
 		this.end();
 	}
 
@@ -230,11 +251,17 @@ Round.prototype.choose = function(number)
 
 		this.timeRemaining -= (roundTime / 3);
 		if (this.timeRemaining <= 0) {
+			updateTimer(1);
 			this.end();
+		} else {
+			updateTimer(this.timeRemaining);
 		}
 	}
 };
 
+/**
+ *
+ */
 Round.prototype.end = function()
 {
 	clearInterval(this.timerInterval);
@@ -247,5 +274,7 @@ Round.prototype.end = function()
 	}
 
 	this.wrapper.dispose();
-	newRound();
+	setTimeout(function() {
+		newRound();
+	}, 2000);
 };

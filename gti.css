@@ -105,6 +105,14 @@ header.hidden {
 	font-family: 'League Gothic';
 }
 
+#body {
+	position: absolute;
+	top: 50%;
+	left: 0;
+	width: 100%;
+	margin: -150px 0 0;
+}
+
 .choices {
 	display: -webkit-box;
 	-webkit-transition: opacity .4s;
