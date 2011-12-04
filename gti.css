@@ -3,6 +3,30 @@
 	src: url('League-Gothic.otf');
 }
 
+@-webkit-keyframes shake {
+	0% { -webkit-transform: rotate(5deg) scale(.6); }
+	5% { -webkit-transform: rotate(2deg) scale(.6); }
+	10% { -webkit-transform: rotate(7deg) scale(.6); }
+	15% { -webkit-transform: rotate(-3deg) scale(.6); }
+	20% { -webkit-transform: rotate(2deg) scale(.6); }
+	25% { -webkit-transform: rotate(-3deg) scale(.6); }
+	30% { -webkit-transform: rotate(5deg) scale(.6); }
+	35% { -webkit-transform: rotate(-4deg) scale(.6); }
+	40% { -webkit-transform: rotate(2deg) scale(.6); }
+	45% { -webkit-transform: rotate(6deg) scale(.6); }
+	50% { -webkit-transform: rotate(-4deg) scale(.6); }
+	55% { -webkit-transform: rotate(1deg) scale(.6); }
+	60% { -webkit-transform: rotate(-7deg) scale(.6); }
+	65% { -webkit-transform: rotate(5deg) scale(.6); }
+	70% { -webkit-transform: rotate(-5deg) scale(.6); }
+	75% { -webkit-transform: rotate(4deg) scale(.6); }
+	80% { -webkit-transform: rotate(-3deg) scale(.6); }
+	85% { -webkit-transform: rotate(6deg) scale(.6); }
+	90% { -webkit-transform: rotate(-7deg) scale(.6); }
+	95% { -webkit-transform: rotate(0deg) scale(.6); }
+	100% { -webkit-transform: rotate(3deg) scale(.6); }
+}
+
 html {
 	min-height: 100%;
 	background: url(img/whitediamond.png) center top;
@@ -45,6 +69,13 @@ body {
 	.newgame.ribbon:hover .foreground {
 		background: #0f8ad0;
 	}
+
+.shaking {
+	-webkit-animation-name: shake;
+	-webkit-animation-duration: 500ms;
+	-webkit-animation-timing-function: linear;
+	-webkit-animation-iteration-count: infinite;
+}
 
 #startscreen {
 	position: absolute;

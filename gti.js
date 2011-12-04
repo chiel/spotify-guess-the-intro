@@ -152,7 +152,9 @@ function updateTimer(timeRemaining)
 function updateMultiplier()
 {
 	console.log('updating multiplier', multiplier);
-	$('multiplier').getElement('.count').set('text', multiplier);
+	var elem = $('multiplier');
+	elem.toggleClass('shaking', multiplier >= 20);
+	elem.getElement('.count').set('text', multiplier);
 
 	if (multiplier > 1) {
 		console.log($('multiplier').removeClass('hidden'));
