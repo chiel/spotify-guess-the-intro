@@ -1,0 +1,13 @@
+{
+	"BundleType": "Application",
+	"AppIcon": {
+		"36x18": "img/gtiIcon.png"
+	},
+	"AppName": {
+		"en": "Guess the Intro"
+	},
+	"SupportedLanguages": [
+		"en"
+	],
+	"RequiredInterface": "1"
+}
