@@ -34,7 +34,6 @@ var pool = [],
 	currentRound,
 	score = 0,
 	multiplier = initialMultiplier,
-	// multiplierEl = $('multiplier'),
 	roundTimer;
 
 /**
@@ -290,10 +289,12 @@ var Round = new Class({
 	{
 		if (!this.playing && this.chosen) { return; }
 
+		this.chosen = true;
+
 		if (index === this.correctIndex) {
-			this.success();
-		} else if (this.disabledChoices.indexOf(index) === -1) {
-			this.failure();
+			this.success(index);
+		} else {
+			this.failure(index);
 		}
 	},
 
@@ -322,7 +323,7 @@ var Round = new Class({
 	failure: function(index)
 	{
 		console.log('failure');
-		this.choiceEls[index].classList.add('inactive');
+		this.elements[index].classList.add('inactive');
 		this.disabledChoices.push(index);
 		multiplier = 1;
 		updateMultiplier();
