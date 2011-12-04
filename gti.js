@@ -40,14 +40,27 @@ var pool = [],
  */
 function init()
 {
-	// Get all tracks in a user's library
-	pool = m.library.tracks;
-
 	// Make sure people can't use playback control, and hide metadata
-	if (sp.trackPlayer.setHidesNowPlayingMetadata && sp.trackPlayer.setAllowsPlaybackControl) {
+	if (sp.trackPlayer.setHidesNowPlayingMetadata) {
 		sp.trackPlayer.setHidesNowPlayingMetadata(true);
+	}
+	if (sp.trackPlayer.setAllowsPlaybackControl) {
 		sp.trackPlayer.setAllowsPlaybackControl(false);
 	}
+
+	document.getElement('#startscreen .newgame').addEvent('click', gameStart);
+
+}
+
+/**
+ * When a game starts
+ */
+function gameStart()
+{
+	$('startscreen').addClass('hidden');
+
+	// Get all tracks in a user's library
+	pool = m.library.tracks;
 
 	// Add Rick Astley for fun and profit...
 	m.Track.fromURI('spotify:track:6JEK0CvvjDjjMUBFoXShNZ', function(track) {
@@ -55,7 +68,8 @@ function init()
 			pool.push(track);
 		}
 		build();
-		newRound();
+		showMainUI();
+		// newRound();
 	});
 
 	// Attach an event to check for keypresses
@@ -77,6 +91,15 @@ function init()
 			currentRound.startTimer();
 		}
 	});
+}
+
+/**
+ * Shows the main UI
+ */
+function showMainUI()
+{
+	console.log('show main ui');
+	document.getElement('header').removeClass('hidden');
 }
 
 /**

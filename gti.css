@@ -5,14 +5,101 @@
 
 html {
 	min-height: 100%;
+	background: url(img/whitediamond.png) center top;
 }
 body {
-	display: -webkit-box;
-	-webkit-box-orient: vertical;
-	width: 820px;
+	overflow: hidden;
 	min-height: 100%;
 	margin: 0 auto;
+	background: url(img/whitediamond.png) center top;
 }
+
+.ribbon {
+	display: inline-block;
+	height: 53px;
+	background: #000;
+	-webkit-mask-box-image: url('img/ribbon-mask-bg.png') 0 41 0 40 stretch;
+}
+.ribbon:hover {
+	text-decoration: none;
+}
+	.ribbon span {
+		display: block;
+		height: 100%;
+		padding: 0 50px;
+		background: #ff5b26;
+		color: #fff;
+		font-family: 'League Gothic';
+		font-size: 32px;
+		line-height: 44px;
+		text-align: center;
+		text-shadow: none;
+		text-transform: uppercase;
+		-webkit-font-smoothing: antialiased;
+		-webkit-mask-box-image: url('img/ribbon-mask-fg.png') 0 41 0 40 stretch;
+	}
+
+	.newgame.ribbon span {
+		background: #0a7dbf;
+	}
+	.newgame.ribbon:hover span {
+		background: #f00;
+	}
+
+#startscreen {
+	position: absolute;
+	top: 150px;
+	left: 0;
+	width: 100%;
+	text-align: center;
+	-webkit-transition: opacity .4s;
+}
+#startscreen.hidden {
+	opacity: 0;
+}
+
+h1 {
+	width: 336px;
+	height: 167px;
+	margin: 0 auto 100px;
+	background: url(img/logo.png);
+	text-indent: -999em;
+}
+
+
+.margin {
+	position: relative;
+	width: 820px;
+	margin: 0 auto;
+}
+
+header {
+	position: relative;
+	top: 65px;
+	height: 100px;
+	-webkit-transition: top .3s;
+}
+header.hidden {
+	top: -100px;
+}
+
+#roundtimer {
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	width: 146px;
+	height: 146px;
+	margin: -38px 0 0 -73px;
+	background: url(img/bg-timer.png);
+	-webkit-transform: scale(.5);
+}
+	#roundtimer svg {
+		position: absolute;
+		top: 50%;
+		left: 50%;
+		margin: -50px 0 0 -50px;
+	}
+
 
 #timer, #points {
 	font-family: 'League Gothic';
@@ -46,24 +133,9 @@ body {
 		height: 190px;
 	}
 
-.ribbon {
-	display: block;
-	height: 53px;
-	background: #000;
-	-webkit-mask-box-image: url('img/ribbon-mask-bg.png') 0 41 0 40 stretch;
+
+@-webkit-keyframes spin {
+	from { -webkit-transform: rotate(0deg); }
+	to   { -webkit-transform: rotate(360deg); }
 }
-	.ribbon span {
-		display: block;
-		height: 100%;
-		padding: 0 50px;
-		background: #ff5b26;
-		color: #fff;
-		font-family: 'League Gothic';
-		font-size: 32px;
-		line-height: 44px;
-		text-align: center;
-		text-shadow: none;
-		text-transform: uppercase;
-		-webkit-font-smoothing: antialiased;
-		-webkit-mask-box-image: url('img/ribbon-mask-fg.png') 0 41 0 40 stretch;
-	}
+
