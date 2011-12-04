@@ -36,6 +36,19 @@ var pool = [],
 	multiplier = initialMultiplier,
 	roundTimer;
 
+var messages = {
+	failure: [
+		'Haaaaaa you suck',
+		'Oh no!',
+		'Better luck next time'
+	],
+	success: [
+		'Yaaaaaay!',
+		'Awesomesauce',
+		'You rock!'
+	]
+}
+
 /**
  * Grab the user's library and start the game!
  */
@@ -122,7 +135,12 @@ function showMainUI()
  */
 function newRound()
 {
-	if (currentRound) {
+	console.log('currentRound:', currentRound);
+	// If the current round is still going, do nothing
+	if (currentRound && currentRound.playing && !currentRound.roundIsOver) {
+		return;
+	}
+	if (currentRound && !currentRound.playing && currentRound.roundIsOver) {
 		pastRounds.push(currentRound);
 	}
 	currentRound = new Round();
@@ -155,13 +173,38 @@ function updateTimer(timeRemaining)
  */
 function updateMultiplier()
 {
-	console.log('updating multiplier', multiplier);
-	var elem = $('multiplier');
-	elem.toggleClass('shaking', multiplier >= 20);
-	elem.getElement('.count').set('text', multiplier);
+	var el = $('multiplier');
+	el.toggleClass('shaking', multiplier >= 20);
+	el.getElement('.count').set('text', multiplier);
 
 	if (multiplier > 1) {
-		console.log($('multiplier').removeClass('hidden'));
+		el.removeClass('hidden');
+	} else {
+		el.addClass('hidden');
+	}
+}
+
+
+var messageTimer;
+/**
+ *
+ */
+function showMessage(type)
+{
+	console.log(type);
+	console.log(messages);
+	if (messages[type]) {
+		clearTimeout(showMessage);
+		var msg = messages[type][Math.floor(Math.random() * messages[type].length)];
+		var el = $('footermessage');
+		el.removeClass('success')
+			.removeClass('failure')
+			.addClass('active '+type)
+			.getElement('.foreground').set('text', msg);
+
+		messageTimer = setTimeout(function() {
+			el.removeClass('active');
+		}, 2000);
 	}
 }
 
@@ -173,7 +216,7 @@ function updateMultiplier()
  *
  */
 var Round = new Class({
-	chosen: false,
+	roundIsOver: false,
 	choices: [],
 	correctIndex: -1,
 	wrapper: null,
@@ -200,6 +243,7 @@ var Round = new Class({
 	{
 		var attempts = 0;
 		// Get 4 choices from the pool and save them in this round
+		console.log(this.choices);
 		while(this.choices.length < 4 && attempts < 50) {
 			var track = pool[Math.floor(Math.random() * pool.length)];
 			if (this.choices.indexOf(track) === -1 && track.data.availableForPlayback) {
@@ -287,9 +331,7 @@ var Round = new Class({
 	 */
 	choose: function(index)
 	{
-		if (!this.playing && this.chosen) { return; }
-
-		this.chosen = true;
+		if (!this.playing && this.roundIsOver) { return; }
 
 		if (index === this.correctIndex) {
 			this.success(index);
@@ -303,7 +345,7 @@ var Round = new Class({
 	 */
 	success: function(index)
 	{
-		console.log('GREAT SUCCESS!');
+		this.roundIsOver = true;
 
 		if (this.timeRemaining > 0) {
 			this.timeRemaining -= new Date() - this.lastTimer;
@@ -312,6 +354,8 @@ var Round = new Class({
 			score += this.roundScore;
 			document.getElement('#score .count').set('text', score);
 		}
+
+		showMessage('success');
 		multiplier++;
 		updateMultiplier();
 		this.end(true);
@@ -322,14 +366,19 @@ var Round = new Class({
 	 */
 	failure: function(index)
 	{
-		console.log('failure');
-		this.elements[index].classList.add('inactive');
-		this.disabledChoices.push(index);
 		multiplier = 1;
 		updateMultiplier();
+		showMessage('failure');
 
+		if (index) {
+			this.elements[index].classList.add('inactive');
+			this.disabledChoices.push(index);
+		}
+
+		// Check if there's still time left
 		this.timeRemaining -= (roundTime / 3);
 		if (this.timeRemaining <= 0) {
+			this.roundIsOver = true;
 			updateTimer(1);
 			this.end(true);
 		} else {
@@ -345,6 +394,7 @@ var Round = new Class({
 		console.log('end');
 		clearInterval(this.timerInterval);
 		m.player.playing = false;
+		this.playing = false;
 
 		this.wrapper.dispose();
 		if (startNewRound) {

@@ -40,6 +40,7 @@ body {
 
 .ribbon {
 	display: inline-block;
+	width: auto;
 	height: 53px;
 	background: #000;
 	-webkit-mask-box-image: url('img/ribbon-mask-bg.png') 0 40 0 40 stretch;
@@ -49,6 +50,7 @@ body {
 }
 	.ribbon .foreground {
 		display: block;
+		width: auto;
 		height: 100%;
 		padding: 0 50px;
 		background: #ff5b26;
@@ -63,11 +65,27 @@ body {
 		-webkit-mask-box-image: url('img/ribbon-mask-fg.png') 0 40 0 40 stretch;
 	}
 
-	.newgame.ribbon .foreground {
+	.ribbon.newgame .foreground {
 		background: #0a7dbf;
 	}
-	.newgame.ribbon:hover .foreground {
+	.ribbon.newgame:hover .foreground {
 		background: #0f8ad0;
+	}
+
+	.ribbon#footermessage {
+		display: block;
+		margin: 0 auto;
+		opacity: 0;
+		-webkit-transition: opacity .4s;
+	}
+	.ribbon#footermessage.active {
+		opacity: 1;
+	}
+	.ribbon.failure .foreground {
+		background: #3b3b3b;
+	}
+	.ribbon.success .foreground {
+		background: #0a7dbf;
 	}
 
 .shaking {
@@ -182,10 +200,17 @@ header.hidden {
 
 #body {
 	position: absolute;
-	top: 50%;
+	top: 220px;
 	left: 0;
 	width: 100%;
-	margin: -150px 0 0;
+}
+
+footer {
+	position: absolute;
+	top: 600px;
+	left: 0;
+	width: 100%;
+	text-align: center;
 }
 
 .choices {
