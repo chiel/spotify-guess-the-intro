@@ -85,10 +85,10 @@ function gameStart()
 		// Check if there's currently a round going on
 		if (currentRound && currentRound instanceof Round) {
 			switch (e.keyCode) {
-				case 49: currentRound.choose(1); break;
-				case 50: currentRound.choose(2); break;
-				case 51: currentRound.choose(3); break;
-				case 52: currentRound.choose(4); break;
+				case 49: currentRound.choose(0); break;
+				case 50: currentRound.choose(1); break;
+				case 51: currentRound.choose(2); break;
+				case 52: currentRound.choose(3); break;
 			}
 		}
 	});
@@ -96,9 +96,14 @@ function gameStart()
 	// Check when playstate is changed
 	m.player.observe(m.EVENT.CHANGE, function(e) {
 		if (e.data.playstate && m.player.playing && currentRound) {
-			currentRound.startTimer();
+			currentRound.playbackStart();
 		}
 	});
+}
+
+function gameEnd()
+{
+	console.log('end LE GAME');
 }
 
 /**
@@ -162,124 +167,143 @@ function updateMultiplier()
 }
 
 
-/**
- * Each round is represented by a Round instance
- */
-function Round()
-{
-	// Properties
-	this.choices = [];
-	this.choiceEls = [];
-	this.disabledChoices = [];
-	this.timeRemaining = roundTime;
-	this.roundScore = 0;
 
-	this.getChoices();
-	this.displayChoices();
-	this.start();
-}
+
 
 /**
  *
  */
-Round.prototype.getChoices = function()
-{
-	var attempts = 0;
-	// Get 4 choices from the pool and save them in this round
-	while(this.choices.length < 4 && attempts < 50) {
-		var track = pool[Math.floor(Math.random() * pool.length)];
-		if (this.choices.indexOf(track) === -1 && track.data.availableForPlayback) {
-			this.choices.push(track);
+var Round = new Class({
+	chosen: false,
+	choices: [],
+	correctIndex: -1,
+	wrapper: null,
+	elements: [],
+	disabledChoices: [],
+	timeRemaining: roundTime,
+	roundScore: 0,
+	playing: false,
+
+	/**
+	 *
+	 */
+	initialize: function()
+	{
+		this.getChoices();
+		this.build();
+		this.start();
+	},
+
+	/**
+	 *
+	 */
+	getChoices: function()
+	{
+		var attempts = 0;
+		// Get 4 choices from the pool and save them in this round
+		while(this.choices.length < 4 && attempts < 50) {
+			var track = pool[Math.floor(Math.random() * pool.length)];
+			if (this.choices.indexOf(track) === -1 && track.data.availableForPlayback) {
+				this.choices.push(track);
+			}
+			attempts++;
 		}
-		attempts++;
-	}
 
-	// Grab a random item from the choices, which is the correct choice
-	this.correctChoice = Math.floor(Math.random() * this.choices.length);
+		// Grab a random item from the choices, which is the correct choice
+		this.correctIndex = Math.floor(Math.random() * this.choices.length);
 
-	// Remove the correct choice from the pool
-	var poolIndex = pool.indexOf(this.choices[this.correctChoice]);
-	pool.splice(poolIndex, 1);
-};
+		// Remove the correct choice from the pool
+		pool.splice(pool.indexOf(this.choices[this.correctIndex]), 1);
+	},
 
-/**
- * Render the choices in the layout
- */
-Round.prototype.displayChoices = function()
-{
-	this.wrapper = new Element('ul.choices.round-'+currentRound);
-	this.wrapper.addEvent('click', function(e) {
-		var li = e.target;
-		if (li.get('tag') !== 'li') {
-			li = e.target.getParent('li');
+	/**
+	 *
+	 */
+	build: function()
+	{
+		this.wrapper = new Element('ul.choices.round-'+currentRound);
+		this.wrapper.addEvent('click', function(e) {
+			var li = e.target;
+			if (li.get('tag') !== 'li') {
+				li = e.target.getParent('li');
+			}
+			this.choose(li.retrieve('index'));
+		}.bind(this));
+
+		var self = this;
+		for (var i = 0; i < this.choices.length; i++) {
+			var track = this.choices[i];
+			var el = new Element('li');
+			el.store('index', i);
+			el.adopt(
+				new v.Image(track.data.album.cover).node,
+				new Element('div.track', {html: track.data.name}),
+				new Element('div.artist', {html: track.data.artists[0].name}),
+				new Element('div.number', {html: i + 1})
+			);
+
+			// Save the element
+			this.elements.push(el);
+			this.wrapper.adopt(el);
+		};
+
+		this.wrapper.inject(document.getElement('#body .margin'));
+	},
+
+	/**
+	 *
+	 */
+	start: function()
+	{
+		m.player.play(this.choices[this.correctIndex]);
+	},
+
+	/**
+	 *
+	 */
+	playbackStart: function()
+	{
+		this.playing = true;
+
+		this.timerInterval = setInterval(function() {
+			this.timeRemaining -= 100;
+			gameTimeRemaining -= 100;
+			updateTimer(this.timeRemaining);
+			this.lastTimer = new Date();
+			if (gameTimeRemaining <= 0) {
+				this.failure();
+				gameEnd();
+			}
+			if (this.timeRemaining <= 0) {
+				multiplier = 1;
+				updateMultiplier();
+				updateTimer(1);
+				this.end(true);
+			}
+		}.bind(this), 100);
+	},
+
+	/**
+	 *
+	 */
+	choose: function(index)
+	{
+		if (!this.playing && this.chosen) { return; }
+
+		if (index === this.correctIndex) {
+			this.success();
+		} else if (this.disabledChoices.indexOf(index) === -1) {
+			this.failure();
 		}
-		this.choose(li.retrieve('number'));
-	}.bind(this));
+	},
 
-	var self = this;
-	for (var i = 0; i < this.choices.length; i++) {
-		var track = this.choices[i];
-		var el = new Element('li');
-		el.store('number', i + 1);
-		el.adopt(
-			new v.Image(track.data.album.cover).node,
-			new Element('div.track', {html: track.data.name}),
-			new Element('div.artist', {html: track.data.artists[0].name}),
-			new Element('div.number', {html: i + 1})
-		);
-
-		// Save the element
-		this.choiceEls.push(el);
-		this.wrapper.adopt(el);
-	};
-
-	this.wrapper.inject(document.getElement('#body .margin'));
-};
-
-/**
- * Start playback, this actually only starts loading the track
- */
-Round.prototype.start = function()
-{
-	m.player.play(this.choices[this.correctChoice]);
-};
-
-/**
- * When playback actually starts, this is fired
- */
-Round.prototype.startTimer = function()
-{
-	this.timer();
-}
-
-/**
- * Set an interval every second to handle the timer
- */
-Round.prototype.timer = function()
-{
-	this.timerInterval = setInterval(function() {
-		this.timeRemaining -= 100;
-		gameTimeRemaining -= 100;
-		updateTimer(this.timeRemaining);
-		this.lastTimer = new Date();
-		if (this.timeRemaining <= 0) {
-			multiplier = 1;
-			updateMultiplier();
-			updateTimer(1);
-			this.end(true);
-		}
-	}.bind(this), 100);
-};
-
-/**
- * Choose something!
- */
-Round.prototype.choose = function(number)
-{
-	var index = number - 1;
-	// Check if it's the correct choice
-	if (index === this.correctChoice) {
+	/**
+	 *
+	 */
+	success: function(index)
+	{
 		console.log('GREAT SUCCESS!');
+
 		if (this.timeRemaining > 0) {
 			this.timeRemaining -= new Date() - this.lastTimer;
 			gameTimeRemaining -= new Date() - this.lastTimer;
@@ -290,10 +314,14 @@ Round.prototype.choose = function(number)
 		multiplier++;
 		updateMultiplier();
 		this.end(true);
-	}
+	},
 
-	// Wrong choice
-	else if (this.disabledChoices.indexOf(index) === -1) {
+	/**
+	 *
+	 */
+	failure: function(index)
+	{
+		console.log('failure');
 		this.choiceEls[index].classList.add('inactive');
 		this.disabledChoices.push(index);
 		multiplier = 1;
@@ -306,21 +334,24 @@ Round.prototype.choose = function(number)
 		} else {
 			updateTimer(this.timeRemaining);
 		}
-	}
-};
+	},
 
-/**
- *
- */
-Round.prototype.end = function(startNewRound)
-{
-	clearInterval(this.timerInterval);
-	m.player.playing = false;
+	/**
+	 *
+	 */
+	end: function(startNewRound)
+	{
+		console.log('end');
+		clearInterval(this.timerInterval);
+		m.player.playing = false;
 
-	this.wrapper.dispose();
-	if (startNewRound) {
-		setTimeout(function() {
-			newRound();
-		}, 2000);
+		this.wrapper.dispose();
+		if (startNewRound) {
+			setTimeout(function() {
+				newRound();
+			}, 2000);
+		}
 	}
-};
+
+});
+
