@@ -1,6 +1,6 @@
 @font-face {
 	font-family: 'League Gothic';
-	src: url('League-Gothic.otf');
+	src: url(../font/League-Gothic.otf);
 }
 
 @-webkit-keyframes shake {
@@ -29,13 +29,13 @@
 
 html {
 	min-height: 100%;
-	background: url(img/whitediamond.png) center top;
+	background: url(../img/whitediamond.png) center top;
 }
 body {
 	overflow: hidden;
 	min-height: 100%;
 	margin: 0 auto;
-	background: url(img/whitediamond.png) center top;
+	background: url(../img/whitediamond.png) center top;
 }
 
 .ribbon {
@@ -43,7 +43,7 @@ body {
 	width: auto;
 	height: 53px;
 	background: #000;
-	-webkit-mask-box-image: url('img/ribbon-mask-bg.png') 0 40 0 40 stretch;
+	-webkit-mask-box-image: url(../img/ribbon-mask-bg.png) 0 40 0 40 stretch;
 }
 .ribbon:hover {
 	text-decoration: none;
@@ -62,7 +62,7 @@ body {
 		text-shadow: none;
 		text-transform: uppercase;
 		-webkit-font-smoothing: antialiased;
-		-webkit-mask-box-image: url('img/ribbon-mask-fg.png') 0 40 0 40 stretch;
+		-webkit-mask-box-image: url(../img/ribbon-mask-fg.png) 0 40 0 40 stretch;
 	}
 
 	.ribbon.newgame .foreground {
@@ -113,7 +113,7 @@ h1 {
 	width: 336px;
 	height: 167px;
 	margin: 0 auto 100px;
-	background: url(img/logo.png);
+	background: url(../img/logo.png);
 	text-indent: -999em;
 }
 
@@ -153,7 +153,7 @@ header.hidden {
 	width: 146px;
 	height: 146px;
 	margin: -38px 0 0 -73px;
-	background: url(img/bg-timer.png);
+	background: url(../img/bg-timer.png);
 	-webkit-transform: scale(.5);
 }
 	#roundtimer svg {
