@@ -228,6 +228,7 @@ footer {
 		text-align: center;
 		white-space: nowrap;
 		-webkit-transition: opacity .4s;
+		overflow: hidden;
 	}
 	.choices li:first-child {
 		margin-left: 0;
