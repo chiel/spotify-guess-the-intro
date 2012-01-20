@@ -2,10 +2,10 @@
  * 1. Make a set of tracks based on all the user's playlists, and add rick astley (the pool).
  * 2. The game in total lasts 5 minutes, each round lasts 20sec (or so).
  * 3. Each round picks 4 tracks at random from the pool and removes the correct answer from the pool
- * 		- Present the options
- * 		- Play the track
- * 		- Score for each round is multiplier x time left in the current round
- * 		- Guess correctly increases multiplier by 1, otherwise reset
+ *    - Present the options
+ *    - Play the track
+ *    - Score for each round is multiplier x time left in the current round
+ *    - Guess correctly increases multiplier by 1, otherwise reset
  *
  * If you get a wrong answer, it will disable that answer, and decrease the time left by a quarter of the total round time
  *
@@ -13,28 +13,31 @@
  */
 "use strict";
 
-exports.init = init;
+/**
+ * We just need to expose one simple function
+ */
+exports.init = function(options) { GuessTheIntro.init(options); };
 
 // Import the Spotify API
 sp = getSpotifyApi(1);
 var m = sp.require('sp://import/scripts/api/models'),
-	v = sp.require('sp://import/scripts/api/views');
+    v = sp.require('sp://import/scripts/api/views');
 
 // Default options
 var gameTime = 5 * (60 * 1000), // in milliseconds
-	roundTime = 20000, // in milliseconds
-	maxRoundScore = 30, // maximum score to be had in a round
-	initialMultiplier = 1,
-	maxMultiplier = 8;
+    roundTime = 20000, // in milliseconds
+    maxRoundScore = 30, // maximum score to be had in a round
+    initialMultiplier = 1,
+    maxMultiplier = 8;
 
 // Global properties
 var pool = [],
-	gameTimeRemaining = gameTime,
-	pastRounds = [],
-	currentRound,
-	score = 0,
-	multiplier = initialMultiplier,
-	roundTimer;
+    gameTimeRemaining = gameTime,
+    pastRounds = [],
+    currentRound,
+    score = 0,
+    multiplier = initialMultiplier,
+    roundTimer;
 
 var messages = {
 	failure: [
@@ -47,31 +50,345 @@ var messages = {
 		'Awesomesauce',
 		'You rock!'
 	]
-}
+};
 
 /**
- * Grab the user's library and start the game!
+ * Useful for firing cross-object events
  */
-function init()
-{
-	// Make sure people can't use playback control, and hide metadata
-	if (sp.trackPlayer.setHidesNowPlayingMetadata) {
-		sp.trackPlayer.setHidesNowPlayingMetadata(true);
-	}
-	if (sp.trackPlayer.setAllowsPlaybackControl) {
-		sp.trackPlayer.setAllowsPlaybackControl(false);
-	}
+var GTIE = new Events;
 
-	document.getElement('#startscreen .newgame').addEvent('click', gameStart);
-}
+/**
+ *
+ */
+var GuessTheIntro = {
+	/**
+	 * Default options
+	 */
+	options: {
+		gameTime: 5 * 60,
+		roundTime: 20
+	},
+
+	/**
+	 * Game time in milliseconds
+	 */
+	gameTime: 0,
+
+	/**
+	 * Round time in milliseconds
+	 */
+	roundTime: 0,
+
+	/**
+	 * The current game
+	 */
+	currentGame: null,
+
+	/**
+	 * Keep track of past games
+	 */
+	pastGames: [],
+
+	/**
+	 *
+	 */
+	init: function(options)
+	{
+		var self = this;
+
+		this.setOptions(options);
+
+		// Javascript likes milliseconds
+		this.gameTime = this.options.gameTime * 1000;
+		this.roundTime = this.options.roundTime * 1000;
+
+		this.setEvents();
+
+		Pool.init();
+		StartScreen.init();
+	},
+
+	/**
+	 * Set all global events required
+	 */
+	setEvents: function()
+	{
+		var self = this;
+
+		GTIE.addEvents({
+			'game.new': this.newGame.bind(this),
+			'game.end': this.endGame.bind(this)
+		});
+
+		// Track when the app unloads
+		window.addEvent('unload', function() {
+			if (currentGame) {
+				currentGame.end();
+			}
+		});
+	},
+
+	/**
+	 * A new game should be started
+	 */
+	newGame: function()
+	{
+		// Check if a game is in progress
+		if (this.currentGame) {
+			return;
+		}
+
+		this.currentGame = new Game();
+	},
+
+	/**
+	 * Current game is ending
+	 */
+	endGame: function()
+	{
+		if (this.currentGame && this.currentGame.ended) {
+			this.pastGames.push(this.currentGame);
+			this.currentGame = null;
+		}
+	}
+};
+Object.merge(GuessTheIntro, new Options);
+
+/**
+ *
+ */
+var Pool = {
+	/**
+	 * All tracks in the pool
+	 */
+	data: [],
+
+	/**
+	 *
+	 */
+	init: function()
+	{
+		var self = this;
+
+		// Get all current user's tracks
+		this.data = m.library.tracks;
+
+		// Add Rick Astley for fun and profit...
+		m.Track.fromURI('spotify:track:6JEK0CvvjDjjMUBFoXShNZ', function(track) {
+			if (self.data.indexOf(track) !== -1) {
+				self.data.push(track);
+			}
+		});
+	},
+
+	/**
+	 * Get a random track from the available ones
+	 */
+	getRandom: function()
+	{
+		return this.data[Math.floor(Math.random() * this.data.length)];
+	},
+
+	/**
+	 * Remove a track by track reference
+	 */
+	remove: function(track)
+	{
+		// Remove the correct choice from the pool
+		this.data.splice(this.data.indexOf(track), 1);
+	}
+};
+
+/**
+ * Everything related to the start screen
+ */
+var StartScreen = {
+	/**
+	 *
+	 */
+	init: function()
+	{
+		this.setEvents();
+	},
+
+	/**
+	 *
+	 */
+	setEvents: function()
+	{
+		var self = this;
+
+		document.getElement('#startscreen .newgame').addEvent('click', function() {
+			self.hide();
+			GTIE.fireEvent('game.new');
+		});
+	},
+
+	/**
+	 * Hide the start screen
+	 */
+	hide: function()
+	{
+		$('startscreen').addClass('hidden');
+	}
+};
+
+/**
+ * Game class to handle starting of new games and rounds
+ */
+var Game = new Class({
+	/**
+	 * Use the options class
+	 */
+	Implements: Options,
+
+	/**
+	 * Indicates whether a game has ended
+	 */
+	ended: false,
+
+	/**
+	 * The current round
+	 */
+	currentRound: null,
+
+	/**
+	 * All past rounds
+	 */
+	pastRounds: [],
+
+	/**
+	 * Start a new game
+	 */
+	initialize: function()
+	{
+		this.currentRound = new Round();
+	}
+});
+
+/**
+ *
+ */
+var Round = new Class({
+	/**
+	 * Available choices for this round
+	 */
+	choices: [],
+
+	/**
+	 * The correct answer for this round
+	 */
+	correctIndex: -1,
+
+	/**
+	 * Start a new round
+	 */
+	initialize: function()
+	{
+		this.getChoices();
+		this.build();
+		this.setEvents();
+	},
+
+	/**
+	 * Get 4 choices for this round and mark one as correct
+	 */
+	getChoices: function()
+	{
+		var attempts = 0,
+		    artists = [];
+
+		while (this.choices.length < 4 && attempts < 50) {
+			var track = Pool.getRandom();
+			if (artists.indexOf(track.artists[0].name) === -1 && track.playable && !track.data.isLocal) {
+				this.choices.push(track);
+				artists.push(track.artists[0].name);
+			}
+			attempts++;
+		}
+
+		this.correctIndex = Math.floor(Math.random() * this.choices.length);
+		Pool.remove(this.choices[this.correntIndex]);
+	},
+
+	/**
+	 *
+	 */
+	build: function()
+	{
+		console.log('build');
+	},
+
+	/**
+	 * Set events for this round
+	 */
+	setEvents: function()
+	{
+		var self = this;
+
+		window.addEvent('keydown', function(e) {
+			if (!self.ended) {
+				switch (e.key) {
+					case '1': self.choose(0); break;
+					case '2': self.choose(1); break;
+					case '3': self.choose(2); break;
+					case '4': self.choose(3); break;
+				}
+			}
+		});
+
+		// Check when playstate is changed
+		m.player.observe(m.EVENT.CHANGE, function(e) {
+			if (e.data.playstate && m.player.playing && !ended) {
+				console.log('playback started');
+			}
+		});
+	},
+
+	/**
+	 * Choose an answer
+	 *
+	 * @param {int} index
+	 */
+	choose: function(index)
+	{
+		console.log('choose answer', index);
+		if (this.ended) {
+			return;
+		}
+
+		// if (index === this.correctIndex) {
+		// 	this.success(index);
+		// } else {
+		// 	this.failure(index);
+		// }
+	},
+
+	/**
+	 * End the round
+	 */
+	end: function()
+	{
+		console.log('end the round');
+		this.ended = true;
+		GTIE.fireEvent('round.end');
+	}
+});
+
+
+
+
+
+
+/* --------------------------------------------------------
+ * --------------- OLD CODE BELOW THIS LINE ---------------
+ * -------------------------------------------------------- */
 
 /**
  * When a game starts
  */
 function gameStart()
 {
-	$('startscreen').addClass('hidden');
-
 	// Pie timer
 	roundTimer = $('roundtimer').getElement('svg path');
 
@@ -113,6 +430,7 @@ function gameStart()
 	});
 }
 
+
 function gameEnd()
 {
 	console.log('end LE GAME');
@@ -143,7 +461,7 @@ function newRound()
 	if (currentRound && !currentRound.playing && currentRound.roundIsOver) {
 		pastRounds.push(currentRound);
 	}
-	currentRound = new Round();
+	currentRound = new _Round();
 }
 
 /**
@@ -208,14 +526,10 @@ function showMessage(type)
 	}
 }
 
-
-
-
-
 /**
  *
  */
-var Round = new Class({
+var _Round = new Class({
 	roundIsOver: false,
 	choices: [],
 	correctIndex: -1,
@@ -231,6 +545,7 @@ var Round = new Class({
 	 */
 	initialize: function()
 	{
+		this.setEvents();
 		this.getChoices();
 		this.build();
 		this.start();
@@ -257,6 +572,19 @@ var Round = new Class({
 
 		// Remove the correct choice from the pool
 		pool.splice(pool.indexOf(this.choices[this.correctIndex]), 1);
+	},
+
+	setEvents: function()
+	{
+		// Attach an event to check for keypresses
+		// window.addEvent('keydown', function(e) {
+		// 	switch (e.key) {
+		// 		case '1': console.log('ONE'); break;
+		// 		case '2': console.log('TWO'); break;
+		// 		case '3': console.log('THREE'); break;
+		// 		case '4': console.log('FOUR'); break;
+		// 	}
+		// });
 	},
 
 	/**

@@ -5,8 +5,8 @@
 	<title></title>
 	<link rel="stylesheet" href="sp://import/css/eve.css">
 	<link rel="stylesheet" href="sp://import/css/api.css">
-	<link rel="stylesheet" href="assets/css/gti.css">
-	<script src="assets/js/mootools.js"></script>
+	<link rel="stylesheet" href="css/gti.css">
+	<script src="js/mootools.js"></script>
 </head>
 
 <body>
@@ -39,8 +39,11 @@
 
 	<script>
 		var sp = getSpotifyApi(1);
-		var gti = sp.require('assets/js/gti');
-		gti.init();
+		var gti = sp.require('js/gti');
+		gti.init({
+			gameTime: 2 * 60, // game time in seconds
+			roundTime: 20 // round time in seconds
+		});
 	</script>
 </body>
 </html>
